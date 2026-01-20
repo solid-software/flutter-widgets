@@ -31,7 +31,8 @@ class TimeSlotWidget extends StatefulWidget {
     this.width,
     this.height,
     this.minDate,
-    this.maxDate, {
+    this.maxDate,
+    this.verticalLineColor, {
     super.key,
   });
 
@@ -85,6 +86,9 @@ class TimeSlotWidget extends StatefulWidget {
 
   /// Defines the max date of the calendar.
   final DateTime maxDate;
+
+  /// Defines the vertical line color.
+  final Color? verticalLineColor;
 
   @override
   // ignore: library_private_types_in_public_api
@@ -162,6 +166,7 @@ class _TimeSlotWidgetState extends State<TimeSlotWidget> {
       _specialRegionViews,
       widget.minDate,
       widget.maxDate,
+      widget.verticalLineColor,
       widgets: _children,
     );
   }
@@ -324,7 +329,8 @@ class _TimeSlotRenderWidget extends MultiChildRenderObjectWidget {
     this.height,
     this.specialRegionBounds,
     this.minDate,
-    this.maxDate, {
+    this.maxDate,
+    this.verticalLineColor, {
     List<Widget> widgets = const <Widget>[],
   }) : super(children: widgets);
 
@@ -345,6 +351,7 @@ class _TimeSlotRenderWidget extends MultiChildRenderObjectWidget {
   final List<TimeRegionView> specialRegionBounds;
   final DateTime minDate;
   final DateTime maxDate;
+  final Color? verticalLineColor;
 
   @override
   _TimeSlotRenderObject createRenderObject(BuildContext context) {
@@ -366,6 +373,7 @@ class _TimeSlotRenderWidget extends MultiChildRenderObjectWidget {
       specialRegionBounds,
       minDate,
       maxDate,
+      verticalLineColor,
     );
   }
 
@@ -414,6 +422,7 @@ class _TimeSlotRenderObject extends CustomCalendarRenderObject {
     this.specialRegionBounds,
     this._minDate,
     this._maxDate,
+    this._verticalLineColor,
   );
 
   List<DateTime> _visibleDates;
@@ -809,6 +818,8 @@ class _TimeSlotRenderObject extends CustomCalendarRenderObject {
     }
   }
 
+  Color? _verticalLineColor;
+
   void _drawTimeSlots(Canvas canvas, int visibleDatesCount) {
     double y = timeIntervalHeight;
     _linePainter.style = PaintingStyle.stroke;
@@ -832,11 +843,18 @@ class _TimeSlotRenderObject extends CustomCalendarRenderObject {
       }
     }
 
+    _linePainter
+      ..color =
+          _verticalLineColor ??=
+              cellBorderColor ?? calendarTheme.cellBorderColor!
+      ..strokeWidth = 1.0
+      ..isAntiAlias = false;
     double x = isRTL ? _cellWidth : timeLabelWidth + _cellWidth;
     for (int i = 0; i < visibleDatesCount - 1; i++) {
       canvas.drawLine(Offset(x, 0), Offset(x, size.height), _linePainter);
       x += _cellWidth;
     }
+    _linePainter.isAntiAlias = true;
 
     if (calendarCellNotifier.value != null) {
       _addMouseHoveringForTimeSlot(canvas, size);

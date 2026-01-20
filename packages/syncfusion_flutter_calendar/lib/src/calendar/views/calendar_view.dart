@@ -9918,6 +9918,7 @@ class _CalendarViewState extends State<_CalendarView>
                               height,
                               widget.calendar.minDate,
                               widget.calendar.maxDate,
+                              widget.calendar.verticalLineColor,
                             ),
                           ),
                           RepaintBoundary(
@@ -13424,30 +13425,31 @@ class _ViewHeaderViewPainter extends CustomPainter {
     double width,
     DateTime today,
   ) {
-    double xPosition, yPosition;
+    double xPosition;
     final bool isDayView = CalendarViewHelper.isDayView(
       view,
       timeSlotViewSettings.numberOfDaysInView,
       timeSlotViewSettings.nonWorkingDays,
       monthViewSettings.numberOfWeeksInView,
     );
+
+    final bool isHorizontalLayout = timeSlotViewSettings.dayFormat == 'EEE';
+
     final double labelWidth =
         isDayView && timeLabelWidth < 50 ? 50 : timeLabelWidth;
-    TextStyle dayTextStyle = viewHeaderDayStyle;
-    TextStyle dateTextStyle = viewHeaderDateStyle;
-    const double topPadding = 5;
+
     if (isDayView) {
       width = labelWidth;
     }
 
-    final Paint linePainter = Paint();
     xPosition = isDayView ? 0 : timeLabelWidth;
-    yPosition = 2;
     final int visibleDatesLength = visibleDates.length;
     final double cellWidth = width / visibleDatesLength;
+
     if (isRTL && !isDayView) {
       xPosition = size.width - timeLabelWidth - cellWidth;
     }
+
     for (int i = 0; i < visibleDatesLength; i++) {
       final DateTime currentDate = visibleDates[i];
 
@@ -13456,7 +13458,6 @@ class _ViewHeaderViewPainter extends CustomPainter {
             timeSlotViewSettings.dayFormat,
             locale,
           ).format(currentDate).toUpperCase();
-
       dayText = _updateViewHeaderFormat(
         timeSlotViewSettings.dayFormat,
         dayText,
@@ -13465,186 +13466,141 @@ class _ViewHeaderViewPainter extends CustomPainter {
       final String dateText = DateFormat(
         timeSlotViewSettings.dateFormat,
       ).format(currentDate);
+
+      TextStyle dayStyle = viewHeaderDayStyle;
+      TextStyle dateStyle = viewHeaderDateStyle;
+
       final bool isToday = isSameDate(currentDate, today);
+
       if (isToday) {
-        final Color? todayTextStyleColor = calendarTheme.todayTextStyle!.color;
-        final Color? todayTextColor =
-            CalendarViewHelper.getTodayHighlightTextColor(
-              todayHighlightColor,
-              todayTextStyle,
-              calendarTheme,
-            );
-        dayTextStyle =
-            todayTextStyle != null
-                ? calendarTheme.todayTextStyle!.copyWith(
-                  fontSize: viewHeaderDayStyle.fontSize,
-                  color: todayTextColor,
-                )
-                : viewHeaderDayStyle.copyWith(color: todayTextColor);
-        dateTextStyle =
-            todayTextStyle != null
-                ? calendarTheme.todayTextStyle!.copyWith(
-                  fontSize: viewHeaderDateStyle.fontSize,
-                )
-                : viewHeaderDateStyle.copyWith(color: todayTextStyleColor);
-      } else {
-        dayTextStyle = viewHeaderDayStyle;
-        dateTextStyle = viewHeaderDateStyle;
+        final Color? todayColor = CalendarViewHelper.getTodayHighlightTextColor(
+          todayHighlightColor,
+          todayTextStyle,
+          calendarTheme,
+        );
+
+        dayStyle = dayStyle.copyWith(
+          color: todayColor,
+          fontWeight: FontWeight.normal,
+        );
+
+        dateStyle = dateStyle.copyWith(
+          color: Colors.white,
+          fontWeight: FontWeight.normal,
+        );
       }
 
       if (!isDateWithInDateRange(minDate, maxDate, currentDate)) {
-        dayTextStyle = dayTextStyle.copyWith(
-          color:
-              dayTextStyle.color != null
-                  ? dayTextStyle.color!.withValues(alpha: 0.38)
-                  : themeData.brightness == Brightness.light
-                  ? Colors.black26
-                  : Colors.white38,
+        dayStyle = dayStyle.copyWith(
+          color: dayStyle.color?.withValues(alpha: 0.38) ?? Colors.grey,
         );
-        dateTextStyle = dateTextStyle.copyWith(
-          color:
-              dateTextStyle.color != null
-                  ? dateTextStyle.color!.withValues(alpha: 0.38)
-                  : themeData.brightness == Brightness.light
-                  ? Colors.black26
-                  : Colors.white38,
+        dateStyle = dateStyle.copyWith(
+          color: dateStyle.color?.withValues(alpha: 0.38) ?? Colors.grey,
         );
       }
 
-      _updateDayTextPainter(dayTextStyle, width, dayText);
+      final TextSpan daySpan = TextSpan(text: dayText, style: dayStyle);
+      _dayTextPainter.text = daySpan;
+      _dayTextPainter.textDirection = TextDirection.ltr;
+      _dayTextPainter.textAlign = TextAlign.left;
+      _dayTextPainter.textScaler = TextScaler.linear(textScaleFactor);
+      _dayTextPainter.layout();
 
-      final TextSpan dateTextSpan = TextSpan(
-        text: dateText,
-        style: dateTextStyle,
-      );
-
-      _dateTextPainter.text = dateTextSpan;
+      final TextSpan dateSpan = TextSpan(text: dateText, style: dateStyle);
+      _dateTextPainter.text = dateSpan;
       _dateTextPainter.textDirection = TextDirection.ltr;
-      _dateTextPainter.textAlign = TextAlign.left;
-      _dateTextPainter.textWidthBasis = TextWidthBasis.longestLine;
+      _dateTextPainter.textAlign = TextAlign.center;
       _dateTextPainter.textScaler = TextScaler.linear(textScaleFactor);
+      _dateTextPainter.layout();
 
-      _dateTextPainter.layout(maxWidth: width);
+      if (isHorizontalLayout) {
+        double spacing = 8.0;
+        if (isToday) {
+          spacing = 14.0;
+        }
 
-      /// To calculate the day start position by width and day painter
-      final double dayXPosition = (cellWidth - _dayTextPainter.width) / 2;
+        final double totalContentWidth =
+            _dayTextPainter.width + spacing + _dateTextPainter.width;
 
-      /// To calculate the date start position by width and date painter
-      final double dateXPosition = (cellWidth - _dateTextPainter.width) / 2;
+        final double startX = xPosition + (cellWidth - totalContentWidth) / 2;
 
-      const int inBetweenPadding = 2;
-      yPosition =
-          size.height / 2 -
-          (_dayTextPainter.height +
-                  topPadding +
-                  _dateTextPainter.height +
-                  inBetweenPadding) /
-              2;
+        final double centerY = size.height / 2;
 
-      _dayTextPainter.paint(
-        canvas,
-        Offset(xPosition + dayXPosition, yPosition),
-      );
-
-      if (isToday) {
-        _drawTodayCircle(
-          canvas,
-          xPosition + dateXPosition,
-          yPosition + topPadding + _dayTextPainter.height + inBetweenPadding,
-          _dateTextPainter,
-        );
-      }
-
-      if (viewHeaderNotifier.value != null) {
-        _addMouseHoverForTimeSlotView(
-          canvas,
-          size,
-          xPosition,
-          yPosition,
-          dateXPosition,
-          topPadding,
-          isToday,
-          inBetweenPadding,
-        );
-      }
-
-      _dateTextPainter.paint(
-        canvas,
-        Offset(
-          xPosition + dateXPosition,
-          yPosition + topPadding + _dayTextPainter.height + inBetweenPadding,
-        ),
-      );
-      if (!isDayView &&
-          showWeekNumber &&
-          ((currentDate.weekday == DateTime.monday) ||
-              (view == CalendarView.workWeek &&
-                  timeSlotViewSettings.nonWorkingDays.contains(
-                    DateTime.monday,
-                  ) &&
-                  i == visibleDatesLength ~/ 2))) {
-        final String weekNumber =
-            DateTimeHelper.getWeekNumberOfYear(currentDate).toString();
-        final TextStyle weekNumberTextStyle =
-            calendarTheme.weekNumberTextStyle!;
-        final TextSpan dayTextSpan = TextSpan(
-          text: weekNumber,
-          style: weekNumberTextStyle,
-        );
-        _dateTextPainter.text = dayTextSpan;
-        _dateTextPainter.textDirection = TextDirection.ltr;
-        _dateTextPainter.textAlign = TextAlign.left;
-        _dateTextPainter.textWidthBasis = TextWidthBasis.longestLine;
-        _dateTextPainter.textScaler = TextScaler.linear(textScaleFactor);
-        _dateTextPainter.layout(maxWidth: timeLabelWidth);
-        final double weekNumberPosition =
-            isRTL
-                ? (size.width - timeLabelWidth) +
-                    ((timeLabelWidth - _dateTextPainter.width) / 2)
-                : (timeLabelWidth - _dateTextPainter.width) / 2;
-        final double weekNumberYPosition =
-            size.height / 2 -
-            (_dayTextPainter.height +
-                    topPadding +
-                    _dateTextPainter.height +
-                    inBetweenPadding) /
-                2 +
-            topPadding +
-            _dayTextPainter.height +
-            inBetweenPadding;
-        const double padding = 10;
-        final Rect rect = Rect.fromLTRB(
-          weekNumberPosition - padding,
-          weekNumberYPosition - (padding / 2),
-          weekNumberPosition + _dateTextPainter.width + padding,
-          weekNumberYPosition + _dateTextPainter.height + (padding / 2),
-        );
-        linePainter.style = PaintingStyle.fill;
-        linePainter.color =
-            weekNumberStyle.backgroundColor ??
-            calendarTheme.weekNumberBackgroundColor!;
-        final RRect roundedRect = RRect.fromRectAndRadius(
-          rect,
-          const Radius.circular(padding / 2),
-        );
-        canvas.drawRRect(roundedRect, linePainter);
-        _dateTextPainter.paint(
-          canvas,
-          Offset(weekNumberPosition, weekNumberYPosition),
-        );
-        final double xPosition = isRTL ? (size.width - timeLabelWidth) : 0;
-        _updateDayTextPainter(
-          weekNumberTextStyle,
-          timeLabelWidth,
-          localizations.weeknumberLabel,
-        );
         _dayTextPainter.paint(
           canvas,
-          Offset(
-            xPosition + (timeLabelWidth / 2 - _dayTextPainter.width / 2),
-            yPosition,
-          ),
+          Offset(startX, centerY - _dayTextPainter.height / 2),
         );
+
+        final double dateX = startX + _dayTextPainter.width + spacing;
+        final double dateY = centerY - _dateTextPainter.height / 2;
+
+        if (isToday) {
+          final double circleRadius =
+              math.max(_dateTextPainter.width, _dateTextPainter.height) / 2 + 6;
+          final Offset circleCenter = Offset(
+            dateX + _dateTextPainter.width / 2,
+            centerY,
+          );
+
+          final Paint circlePaint =
+              Paint()
+                ..color =
+                    CalendarViewHelper.getTodayHighlightTextColor(
+                      todayHighlightColor,
+                      todayTextStyle,
+                      calendarTheme,
+                    ) ??
+                    Colors.blue
+                ..style = PaintingStyle.fill;
+
+          canvas.drawCircle(circleCenter, circleRadius, circlePaint);
+        }
+
+        _dateTextPainter.paint(canvas, Offset(dateX, dateY));
+      } else {
+        const double topPadding = 5;
+        const double inBetweenPadding = 2;
+
+        final double dayX = xPosition + (cellWidth - _dayTextPainter.width) / 2;
+        final double dateX =
+            xPosition + (cellWidth - _dateTextPainter.width) / 2;
+
+        final double yPos =
+            (size.height -
+                (_dayTextPainter.height +
+                    topPadding +
+                    _dateTextPainter.height +
+                    inBetweenPadding)) /
+            2;
+
+        _dayTextPainter.paint(canvas, Offset(dayX, yPos));
+
+        final double dateY =
+            yPos + topPadding + _dayTextPainter.height + inBetweenPadding;
+
+        if (isToday) {
+          final double circleRadius =
+              math.max(_dateTextPainter.width, _dateTextPainter.height) / 2 + 5;
+          final Offset circleCenter = Offset(
+            dateX + _dateTextPainter.width / 2,
+            dateY + _dateTextPainter.height / 2,
+          );
+
+          final Paint circlePaint =
+              Paint()
+                ..color =
+                    CalendarViewHelper.getTodayHighlightTextColor(
+                      todayHighlightColor,
+                      todayTextStyle,
+                      calendarTheme,
+                    ) ??
+                    Colors.blue
+                ..style = PaintingStyle.fill;
+
+          canvas.drawCircle(circleCenter, circleRadius, circlePaint);
+        }
+
+        _dateTextPainter.paint(canvas, Offset(dateX, dateY));
       }
 
       if (isRTL) {
@@ -14982,7 +14938,7 @@ class _CurrentTimeIndicator extends CustomPainter {
     final Paint painter =
         Paint()
           ..color = todayHighlightColor!
-          ..strokeWidth = 1
+          ..strokeWidth = 2
           ..isAntiAlias = true
           ..style = PaintingStyle.fill;
     if (isTimelineView) {

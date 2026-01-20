@@ -223,6 +223,7 @@ class SfCalendar extends StatefulWidget {
     this.onDragStart,
     this.onDragUpdate,
     this.onDragEnd,
+    this.verticalLineColor,
   }) : assert(firstDayOfWeek >= 1 && firstDayOfWeek <= 7),
        assert(headerHeight >= 0),
        assert(viewHeaderHeight >= -1),
@@ -514,6 +515,9 @@ class SfCalendar extends StatefulWidget {
   ///
   ///  ```
   final DateTime maxDate;
+
+  /// Defines the vertical line color in time slot views.
+  final Color? verticalLineColor;
 
   /// A builder that builds a widget, replaces the month cell in the
   /// calendar month view.

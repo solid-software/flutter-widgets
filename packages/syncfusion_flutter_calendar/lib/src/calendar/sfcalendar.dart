@@ -224,6 +224,10 @@ class SfCalendar extends StatefulWidget {
     this.onDragUpdate,
     this.onDragEnd,
     this.verticalLineColor,
+    this.viewHeaderHoverColor,
+    this.viewHeaderSplashColor,
+    this.daysOff,
+    this.onViewHeaderTap,
   }) : assert(firstDayOfWeek >= 1 && firstDayOfWeek <= 7),
        assert(headerHeight >= 0),
        assert(viewHeaderHeight >= -1),
@@ -518,6 +522,16 @@ class SfCalendar extends StatefulWidget {
 
   /// Defines the vertical line color in time slot views.
   final Color? verticalLineColor;
+
+  /// The hover color for view header day labels.
+  final Color? viewHeaderHoverColor;
+
+  /// The splash color for view header day labels.
+  final Color? viewHeaderSplashColor;
+
+  /// List of dates that are day offs. An umbrella sign is displayed next to the
+  /// day number in the view header for these dates.
+  final List<DateTime>? daysOff;
 
   /// A builder that builds a widget, replaces the month cell in the
   /// calendar month view.
@@ -1783,6 +1797,11 @@ class SfCalendar extends StatefulWidget {
   ///
   /// ```
   final CalendarLongPressCallback? onLongPress;
+
+  /// Called when a view header day label (e.g. "Mon 16") is tapped.
+  ///
+  /// The callback receives the [DateTime] of the tapped day.
+  final ValueChanged<DateTime>? onViewHeaderTap;
 
   /// Called whenever a [SfCalendar] cell is selected.
   ///

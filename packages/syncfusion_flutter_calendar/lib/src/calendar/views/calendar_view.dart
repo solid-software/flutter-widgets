@@ -9614,6 +9614,7 @@ class _CalendarViewState extends State<_CalendarView>
                   widget.isMobilePlatform,
                   widget.calendar.weekNumberStyle,
                   widget.localizations,
+                  widget.calendar.daysOff,
                 ),
               ),
             ),
@@ -9870,11 +9871,26 @@ class _CalendarViewState extends State<_CalendarView>
                   widget.isMobilePlatform,
                   widget.calendar.weekNumberStyle,
                   widget.localizations,
+                  widget.calendar.daysOff,
                 ),
               ),
             ),
           ),
         ),
+        if (widget.calendar.onViewHeaderTap != null && !isDayView)
+          Positioned(
+            left: isRTL ? widget.width - viewHeaderWidth : 0,
+            top: 0,
+            right: isRTL ? 0 : widget.width - viewHeaderWidth,
+            height: actualViewHeaderHeight,
+            child: _ViewHeaderTapOverlay(
+              visibleDates: widget.visibleDates,
+              timeLabelWidth: timeLabelWidth,
+              hoverColor: widget.calendar.viewHeaderHoverColor,
+              highlightColor: widget.calendar.viewHeaderSplashColor,
+              onTap: widget.calendar.onViewHeaderTap!,
+            ),
+          ),
         Positioned(
           top:
               isDayView
@@ -13237,6 +13253,7 @@ class _ViewHeaderViewPainter extends CustomPainter {
     this.isMobilePlatform,
     this.weekNumberStyle,
     this.localizations,
+    this.daysOff,
   ) : super(repaint: viewHeaderNotifier);
 
   final CalendarView view;
@@ -13264,6 +13281,7 @@ class _ViewHeaderViewPainter extends CustomPainter {
   final bool isMobilePlatform;
   final WeekNumberStyle weekNumberStyle;
   final SfLocalizations localizations;
+  final List<DateTime>? daysOff;
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -13463,9 +13481,11 @@ class _ViewHeaderViewPainter extends CustomPainter {
         dayText,
       );
 
-      final String dateText = DateFormat(
-        timeSlotViewSettings.dateFormat,
-      ).format(currentDate);
+      final bool isDayOff =
+          daysOff != null && daysOff!.any((d) => isSameDate(d, currentDate));
+      final String dateText =
+          DateFormat(timeSlotViewSettings.dateFormat).format(currentDate) +
+          (isDayOff ? ' ⛱️' : '');
 
       TextStyle dayStyle = viewHeaderDayStyle;
       TextStyle dateStyle = viewHeaderDateStyle;
@@ -13765,7 +13785,8 @@ class _ViewHeaderViewPainter extends CustomPainter {
         oldWidget.todayTextStyle != todayTextStyle ||
         oldWidget.textScaleFactor != textScaleFactor ||
         oldWidget.weekNumberStyle != weekNumberStyle ||
-        oldWidget.showWeekNumber != showWeekNumber;
+        oldWidget.showWeekNumber != showWeekNumber ||
+        oldWidget.daysOff != daysOff;
   }
 
   //// draw today highlight circle in view header.
@@ -16352,5 +16373,51 @@ class _DraggingAppointmentRenderObject extends RenderBox
     }
 
     _textPainter.maxLines = maxLines;
+  }
+}
+
+class _ViewHeaderTapOverlay extends StatefulWidget {
+  const _ViewHeaderTapOverlay({
+    required this.visibleDates,
+    required this.timeLabelWidth,
+    required this.onTap,
+    this.hoverColor,
+    this.highlightColor,
+  });
+
+  final List<DateTime> visibleDates;
+  final double timeLabelWidth;
+  final Color? hoverColor;
+  final Color? highlightColor;
+  final ValueChanged<DateTime> onTap;
+
+  @override
+  State<_ViewHeaderTapOverlay> createState() => _ViewHeaderTapOverlayState();
+}
+
+class _ViewHeaderTapOverlayState extends State<_ViewHeaderTapOverlay> {
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: Colors.transparent,
+      child: Row(
+        children: <Widget>[
+          SizedBox(width: widget.timeLabelWidth),
+          ...List<Widget>.generate(widget.visibleDates.length, (int i) {
+            return Expanded(
+              child: InkWell(
+                key: ValueKey<DateTime>(widget.visibleDates[i]),
+                hoverColor: widget.hoverColor,
+                highlightColor: widget.highlightColor,
+                splashColor: widget.highlightColor,
+                onTap: () => widget.onTap(widget.visibleDates[i]),
+                onLongPress: () => widget.onTap(widget.visibleDates[i]),
+                child: const SizedBox.expand(),
+              ),
+            );
+          }),
+        ],
+      ),
+    );
   }
 }

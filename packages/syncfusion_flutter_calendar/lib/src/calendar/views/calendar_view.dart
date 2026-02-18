@@ -13483,14 +13483,13 @@ class _ViewHeaderViewPainter extends CustomPainter {
 
       final bool isDayOff =
           daysOff != null && daysOff!.any((d) => isSameDate(d, currentDate));
+      final bool isToday = isSameDate(currentDate, today);
       final String dateText =
           DateFormat(timeSlotViewSettings.dateFormat).format(currentDate) +
-          (isDayOff ? ' ⛱️' : '');
+          (isDayOff && !isToday ? ' ⛱️' : '');
 
       TextStyle dayStyle = viewHeaderDayStyle;
       TextStyle dateStyle = viewHeaderDateStyle;
-
-      final bool isToday = isSameDate(currentDate, today);
 
       if (isToday) {
         final Color? todayColor = CalendarViewHelper.getTodayHighlightTextColor(
@@ -13577,6 +13576,22 @@ class _ViewHeaderViewPainter extends CustomPainter {
         }
 
         _dateTextPainter.paint(canvas, Offset(dateX, dateY));
+
+        if (isDayOff && isToday) {
+          final double circleR =
+              math.max(_dateTextPainter.width, _dateTextPainter.height) / 2 + 6;
+          final TextPainter emojiPainter = TextPainter(
+            text: const TextSpan(text: '⛱️'),
+            textDirection: TextDirection.ltr,
+          )..layout();
+          emojiPainter.paint(
+            canvas,
+            Offset(
+              dateX + _dateTextPainter.width / 2 + circleR + 3,
+              centerY - emojiPainter.height / 2,
+            ),
+          );
+        }
       } else {
         const double topPadding = 5;
         const double inBetweenPadding = 2;
@@ -13621,6 +13636,22 @@ class _ViewHeaderViewPainter extends CustomPainter {
         }
 
         _dateTextPainter.paint(canvas, Offset(dateX, dateY));
+
+        if (isDayOff && isToday) {
+          final double circleR =
+              math.max(_dateTextPainter.width, _dateTextPainter.height) / 2 + 5;
+          final TextPainter emojiPainter = TextPainter(
+            text: const TextSpan(text: '⛱️'),
+            textDirection: TextDirection.ltr,
+          )..layout();
+          emojiPainter.paint(
+            canvas,
+            Offset(
+              dateX + _dateTextPainter.width / 2 + circleR + 3,
+              dateY + (_dateTextPainter.height - emojiPainter.height) / 2,
+            ),
+          );
+        }
       }
 
       if (isRTL) {

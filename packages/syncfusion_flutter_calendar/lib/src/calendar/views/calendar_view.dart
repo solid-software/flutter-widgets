@@ -6513,7 +6513,7 @@ class _CalendarViewState extends State<_CalendarView>
       _scrollToPosition();
     }
 
-    final DateTime today = DateTime.now();
+    final DateTime today = _getCurrentIndicatorDateTime(widget.calendar.timeZone);
     _currentTimeNotifier = ValueNotifier<int>(
       (today.day * 24 * 60) + (today.hour * 60) + today.minute,
     );
@@ -6582,11 +6582,14 @@ class _CalendarViewState extends State<_CalendarView>
     /// Eg., if select the all day panel and switch to month view and again
     /// select the same month cell and move to day view then the view show
     /// calendar cell selection and all day panel selection.
-    if (oldWidget.view != widget.view) {
+    if (oldWidget.view != widget.view ||
+        oldWidget.calendar.timeZone != widget.calendar.timeZone) {
       _allDaySelectionNotifier = ValueNotifier<AllDayPanelSelectionDetails?>(
         null,
       );
-      final DateTime today = DateTime.now();
+      final DateTime today = _getCurrentIndicatorDateTime(
+        widget.calendar.timeZone,
+      );
       _currentTimeNotifier = ValueNotifier<int>(
         (today.day * 24 * 60) + (today.hour * 60) + today.minute,
       );
@@ -6708,7 +6711,9 @@ class _CalendarViewState extends State<_CalendarView>
             widget.view != CalendarView.month &&
             widget.view != CalendarView.timelineMonth
         ? Timer.periodic(const Duration(seconds: 1), (Timer t) {
-          final DateTime today = DateTime.now();
+          final DateTime today = _getCurrentIndicatorDateTime(
+            widget.calendar.timeZone,
+          );
           final DateTime viewEndDate =
               widget.visibleDates[widget.visibleDates.length - 1];
 
@@ -14941,13 +14946,12 @@ class _CurrentTimeIndicator extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
-    final DateTime now = DateTime.now();
+    final DateTime now = _getCurrentIndicatorDateTime(timeZone);
     final int hours = now.hour;
     final int minutes = now.minute;
     final int totalMinutes = (hours * 60) + minutes;
     final int viewStartMinutes = (timeSlotViewSettings.startHour * 60).toInt();
     final int viewEndMinutes = (timeSlotViewSettings.endHour * 60).toInt();
-    DateTime getLocationDateTime = DateTime.now();
 
     if (!timeZoneLoaded) {
       return;
@@ -14973,16 +14977,10 @@ class _CurrentTimeIndicator extends CustomPainter {
         timeIntervalSize /
         CalendarViewHelper.getTimeInterval(timeSlotViewSettings);
 
-    if (timeZoneLoaded && timeZone != '') {
-      getLocationDateTime = AppointmentHelper.convertTimezone(now, timeZone);
-    } else {
-      getLocationDateTime = DateTime.now();
-    }
-
     final double currentTimePosition = CalendarViewHelper.getTimeToPosition(
       Duration(
-        hours: getLocationDateTime.hour,
-        minutes: getLocationDateTime.minute,
+        hours: now.hour,
+        minutes: now.minute,
       ),
       timeSlotViewSettings,
       minuteHeight,
@@ -15035,6 +15033,16 @@ class _CurrentTimeIndicator extends CustomPainter {
   bool shouldRepaint(covariant CustomPainter oldDelegate) {
     return true;
   }
+}
+
+DateTime _getCurrentIndicatorDateTime(String? timeZone) {
+  final DateTime now = DateTime.now();
+
+  if (!timeZoneLoaded || timeZone == null || timeZone.isEmpty) {
+    return now;
+  }
+
+  return AppointmentHelper.convertTimezone(now, timeZone);
 }
 
 /// Returns the date time value from the position.

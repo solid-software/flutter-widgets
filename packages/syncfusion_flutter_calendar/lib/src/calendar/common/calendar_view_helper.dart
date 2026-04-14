@@ -1284,6 +1284,7 @@ class CalendarTimeRegion {
     this.recurrenceRule,
     this.color,
     this.enablePointerInteraction = true,
+    this.enableHoverInteraction = true,
     this.recurrenceExceptionDates,
     this.resourceIds,
     this.timeZone,
@@ -1309,6 +1310,9 @@ class CalendarTimeRegion {
 
   /// Used to allow or restrict the interaction of [CalendarTimeRegion].
   final bool enablePointerInteraction;
+
+  /// Used to allow or restrict hover feedback on [CalendarTimeRegion].
+  final bool enableHoverInteraction;
 
   /// Used to specify the time zone of [CalendarTimeRegion] start and end time.
   final String? timeZone;
@@ -1346,6 +1350,7 @@ class CalendarTimeRegion {
     String? recurrenceRule,
     Color? color,
     bool? enablePointerInteraction,
+    bool? enableHoverInteraction,
     List<DateTime>? recurrenceExceptionDates,
     String? timeZone,
     IconData? iconData,
@@ -1360,6 +1365,8 @@ class CalendarTimeRegion {
       textStyle: textStyle ?? this.textStyle,
       enablePointerInteraction:
           enablePointerInteraction ?? this.enablePointerInteraction,
+      enableHoverInteraction:
+          enableHoverInteraction ?? this.enableHoverInteraction,
       recurrenceExceptionDates:
           recurrenceExceptionDates ?? this.recurrenceExceptionDates,
       text: text ?? this.text,
@@ -1397,6 +1404,7 @@ class CalendarTimeRegion {
         region.color == color &&
         region.recurrenceRule == recurrenceRule &&
         region.enablePointerInteraction == enablePointerInteraction &&
+        region.enableHoverInteraction == enableHoverInteraction &&
         CalendarViewHelper.isDateCollectionEqual(
           region.recurrenceExceptionDates,
           recurrenceExceptionDates,
@@ -1417,6 +1425,7 @@ class CalendarTimeRegion {
       recurrenceRule,
       textStyle,
       enablePointerInteraction,
+      enableHoverInteraction,
 
       /// Below condition is referred from text style class
       /// https://api.flutter.dev/flutter/painting/TextStyle/hashCode.html

@@ -61,6 +61,7 @@ class TimeRegion with Diagnosticable {
     this.recurrenceRule,
     this.color,
     this.enablePointerInteraction = true,
+    this.enableHoverInteraction = true,
     this.recurrenceExceptionDates,
     this.resourceIds,
     this.timeZone,
@@ -311,6 +312,9 @@ class TimeRegion with Diagnosticable {
   ///  ```
   final bool enablePointerInteraction;
 
+  /// Used to allow or restrict hover feedback on [TimeRegion].
+  final bool enableHoverInteraction;
+
   /// Used to specify the time zone of [TimeRegion] start and end time.
   ///
   /// See also:
@@ -532,7 +536,6 @@ class TimeRegion with Diagnosticable {
   ///      endTime: DateTime.now().add(Duration(hours: 1)),
   ///      enablePointerInteraction: false,
   ///      color: Colors.grey.withOpacity(0.2),
-  ///      resourceIds: <Object>['0001'],
   ///      text: 'Break'));
   ///
   ///  return regions;
@@ -540,9 +543,6 @@ class TimeRegion with Diagnosticable {
   ///
   /// ```
   final List<Object>? resourceIds;
-
-  /// Creates a copy of this [TimeRegion] but with the given fields replaced
-  /// with the new values.
   TimeRegion copyWith({
     DateTime? startTime,
     DateTime? endTime,
@@ -550,6 +550,7 @@ class TimeRegion with Diagnosticable {
     String? recurrenceRule,
     Color? color,
     bool? enablePointerInteraction,
+    bool? enableHoverInteraction,
     List<DateTime>? recurrenceExceptionDates,
     String? timeZone,
     IconData? iconData,
@@ -564,6 +565,8 @@ class TimeRegion with Diagnosticable {
       textStyle: textStyle ?? this.textStyle,
       enablePointerInteraction:
           enablePointerInteraction ?? this.enablePointerInteraction,
+      enableHoverInteraction:
+          enableHoverInteraction ?? this.enableHoverInteraction,
       recurrenceExceptionDates:
           recurrenceExceptionDates ?? this.recurrenceExceptionDates,
       text: text ?? this.text,
@@ -592,6 +595,7 @@ class TimeRegion with Diagnosticable {
         region.color == color &&
         region.recurrenceRule == recurrenceRule &&
         region.enablePointerInteraction == enablePointerInteraction &&
+        region.enableHoverInteraction == enableHoverInteraction &&
         region.recurrenceExceptionDates == recurrenceExceptionDates &&
         region.iconData == iconData &&
         region.timeZone == timeZone &&
@@ -608,6 +612,7 @@ class TimeRegion with Diagnosticable {
       recurrenceRule,
       textStyle,
       enablePointerInteraction,
+      enableHoverInteraction,
 
       /// Below condition is referred from text style class
       /// https://api.flutter.dev/flutter/painting/TextStyle/hashCode.html
@@ -646,6 +651,12 @@ class TimeRegion with Diagnosticable {
       DiagnosticsProperty<bool>(
         'enablePointerInteraction',
         enablePointerInteraction,
+      ),
+    );
+    properties.add(
+      DiagnosticsProperty<bool>(
+        'enableHoverInteraction',
+        enableHoverInteraction,
       ),
     );
   }

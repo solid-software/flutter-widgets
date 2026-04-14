@@ -3146,6 +3146,7 @@ class _CustomCalendarScrollViewState extends State<CustomCalendarScrollView>
       resourceIds: region.resourceIds,
       timeZone: region.timeZone,
       enablePointerInteraction: region.enablePointerInteraction,
+      enableHoverInteraction: region.enableHoverInteraction,
       iconData: region.iconData,
     );
   }
@@ -6513,7 +6514,9 @@ class _CalendarViewState extends State<_CalendarView>
       _scrollToPosition();
     }
 
-    final DateTime today = _getCurrentIndicatorDateTime(widget.calendar.timeZone);
+    final DateTime today = _getCurrentIndicatorDateTime(
+      widget.calendar.timeZone,
+    );
     _currentTimeNotifier = ValueNotifier<int>(
       (today.day * 24 * 60) + (today.hour * 60) + today.minute,
     );
@@ -11629,7 +11632,12 @@ class _CalendarViewState extends State<_CalendarView>
   }
 
   /// Check the selected date region as enabled time region or not.
-  bool _isEnabledRegion(double y, DateTime? selectedDate, int resourceIndex) {
+  bool _isEnabledRegion(
+    double y,
+    DateTime? selectedDate,
+    int resourceIndex, {
+    bool isHoverInteraction = false,
+  }) {
     if (widget.regions == null ||
         widget.regions!.isEmpty ||
         widget.view == CalendarView.month ||
@@ -11707,7 +11715,10 @@ class _CalendarViewState extends State<_CalendarView>
         continue;
       }
 
-      isValidRegion = region.enablePointerInteraction;
+      isValidRegion =
+          isHoverInteraction
+              ? region.enableHoverInteraction
+              : region.enablePointerInteraction;
     }
 
     return isValidRegion;
@@ -12724,12 +12735,18 @@ class _CalendarViewState extends State<_CalendarView>
     if (((widget.view == CalendarView.day ||
                 widget.view == CalendarView.week ||
                 widget.view == CalendarView.workWeek) &&
-            !_isEnabledRegion(yPosition, hoverDate, hoveringResourceIndex)) ||
+            !_isEnabledRegion(
+              yPosition,
+              hoverDate,
+              hoveringResourceIndex,
+              isHoverInteraction: true,
+            )) ||
         (isTimelineViews &&
             !_isEnabledRegion(
               localPosition.dx,
               hoverDate,
               hoveringResourceIndex,
+              isHoverInteraction: true,
             ))) {
       if (_hoveringDate != null) {
         _hoveringDate = null;
@@ -14978,10 +14995,7 @@ class _CurrentTimeIndicator extends CustomPainter {
         CalendarViewHelper.getTimeInterval(timeSlotViewSettings);
 
     final double currentTimePosition = CalendarViewHelper.getTimeToPosition(
-      Duration(
-        hours: now.hour,
-        minutes: now.minute,
-      ),
+      Duration(hours: now.hour, minutes: now.minute),
       timeSlotViewSettings,
       minuteHeight,
     );
